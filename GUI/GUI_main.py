@@ -374,8 +374,9 @@ class Photometry_GUI(QtGui.QWidget):
     def refresh(self):
         # Called regularly while not running, scan serial ports for 
         # connected boards and update ports list if changed.
-        ports = set([c[0] for c in list_ports.comports()
-                     if ('Pyboard' in c[1]) or ('USB Serial Device' in c[1])])
+        # ports = set([c[0] for c in list_ports.comports()
+        #              if ('Pyboard' in c[1]) or ('USB Serial Device' in c[1])])
+        ports = set([c[0] for c in list_ports.comports()])
         if not ports == self.available_ports:
             self.port_select.clear()
             self.port_select.addItems(sorted(ports))
