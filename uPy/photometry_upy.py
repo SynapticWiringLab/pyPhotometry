@@ -40,6 +40,9 @@ class Photometry():
             self.oversampling_rate = 256e3 # Hz.
         self.one_color = True if mode == '1 colour time div.' else False
 
+    def set_ambientlightcorrection(self, ambientlightcorrection):
+        self.ambientlightcorrection = ambientlightcorrection
+
     def set_LED_current(self, LED_1_current=None, LED_2_current=None):
         # Set the LED current.
         if LED_1_current is not None: 
@@ -166,6 +169,10 @@ class Photometry():
             self.dig_sample =self.DI1.value()
         self.sample = sum(self.ovs_buffer) >> 3
         self.sample = max(self.sample - self.baseline, 0)
+        if self.ambientlightcorrection == True:
+            self.sample = max(self.sample - self.baseline, 0)
+        else:
+            self.sample = max(self.sample, 0)
         self.sample_buffers[self.write_buf][self.write_ind] = (self.sample << 1) | self.dig_sample
         # Update write index and switch buffers if full.
         self.write_ind = (self.write_ind + 1) % self.buffer_size
