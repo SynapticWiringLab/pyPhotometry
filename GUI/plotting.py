@@ -99,10 +99,10 @@ class Digital_plot():
         self.x = np.linspace(-history_dur, 0, history_length) # X axis for timeseries plots.
 
     def update(self, new_DI1, new_DI2):
-            self.DI1.update(new_DI1)
-            self.DI2.update(new_DI2)
-            self.plot_1.setData(self.x, self.DI1.history)
-            self.plot_2.setData(self.x, self.DI2.history)
+        self.DI1.update(new_DI1)
+        self.DI2.update(new_DI2)
+        self.plot_1.setData(self.x, self.DI1.history)
+        self.plot_2.setData(self.x, self.DI2.history)
  
 # Event triggered plot -------------------------------------------------
 
@@ -170,7 +170,7 @@ class Record_clock():
         axis.getViewBox().addItem(self.recording_text, ignoreBounds=True)
         self.recording_text.setParentItem(axis.getViewBox())
         self.recording_text.setPos(110,10)
-        self.warning_text = pg.TextItem(text='!!! NOT RECORDING !!!', color=(255,0,0))
+        self.warning_text = pg.TextItem(text='!!! NOT RECORDING !!!', color=(255,000,000))
         self.warning_text.setFont(QtGui.QFont('arial',30,QtGui.QFont.Bold))
         axis.getViewBox().addItem(self.warning_text, ignoreBounds=True)
         self.warning_text.setParentItem(axis.getViewBox())

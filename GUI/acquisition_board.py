@@ -27,7 +27,7 @@ class Acquisition_board(Pyboard):
         self.enter_raw_repl() # Reset pyboard.
         # Transfer firmware if not already on board.
         self.exec(getsource(_djb2_file))     # Define djb2 hashing function on board.
-        self.exec(getsource(_receive_file))  # Define recieve file function on board.
+        self.exec(getsource(_receive_file))  # Define receive file function on board.
         self.transfer_file(os.path.join('uPy', 'photometry_upy.py'))
         # Import firmware and instantiate photometry class.
         self.exec('import photometry_upy')
@@ -54,9 +54,9 @@ class Acquisition_board(Pyboard):
         self.exec("p.set_ambientlightcorrection({})".format(ambientlightcorrection))
 
     def set_LED_current(self, LED_1_current=None, LED_2_current=None):
-        if LED_1_current is not None:   
+        if LED_1_current is not None:
             self.LED_current[0] = LED_1_current
-        if LED_2_current is not None:   
+        if LED_2_current is not None:
             self.LED_current[1] = LED_2_current
         if self.running:
             if LED_1_current is not None:
@@ -133,7 +133,7 @@ class Acquisition_board(Pyboard):
                 # Chunk read by computer not aligned with that send by board.
                 self.serial.reset_input_buffer()
             else:
-                # check whether any chunks have been skipped, this can occur following an input buffer reset.
+                # Check whether any chunks have been skipped, this can occur following an input buffer reset.
                 self.chunk_number = (self.chunk_number + 1) & 0xffff
                 n_skipped_chunks = np.int16(chunk[-3] - self.chunk_number) # rollover safe subtraction.
                 if not n_skipped_chunks == 0:
