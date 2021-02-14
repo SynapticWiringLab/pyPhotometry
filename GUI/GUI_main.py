@@ -29,7 +29,6 @@ class Photometry_GUI(QtGui.QWidget):
     def __init__(self, parent=None):
         super(QtGui.QWidget, self).__init__(parent)
         self.setWindowTitle('pyPhotometry GUI v{}'.format(config.VERSION))
-        self.setGeometry(100, 100, 1000, 1080) # Left, top, width, height.
 
         # Variables
 
@@ -416,4 +415,5 @@ def launch_GUI():
     photometry_GUI = Photometry_GUI()
     photometry_GUI.show()
     sys.excepthook = photometry_GUI.excepthook
+        self.setGeometry(100, 100, 900, 800) # Left, top, width, height.
     app.exec_()
