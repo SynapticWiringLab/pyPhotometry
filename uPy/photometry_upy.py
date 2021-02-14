@@ -1,24 +1,14 @@
 # Code that runs on the pyboard which handles data acquisition and streaming data to 
 # the host computer.
-# Copyright (c) Thomas Akam 2018-2020.  Licenced under the GNU General Public License v3.
+# Copyright (c) Thomas Akam 2018.  Licenced under the GNU General Public License v3.
 
 import pyb
 import gc
 from array import array
 
-# Hardware config.
+from machine import Pin
 
-pins = {'analog_1' : 'X11', # Pyboard Pins used for analog and digital signals.
-        'analog_2' : 'X12',
-        'digital_1': 'Y7' ,
-        'digital_2': 'Y8' }
-
-LED_calibration = {'slope' : 38.15,  # Calibration of DAC values against LED currents.
-                   'offset':  6.26}  # DAC_value = offset + slope * LED_current_mA.
-
-ADC_volts_per_division = [0.00010122, 0.00010122] # Analog signal volts per division for signal [1, 2]
-
-# Photometry class.
+from hardware_config import pins, LED_calibration, ADC_volts_per_division
 
 class Photometry():
 
@@ -28,12 +18,12 @@ class Photometry():
         self.volts_per_division = ADC_volts_per_division
         self.ADC1 = pyb.ADC(pins['analog_1'])
         self.ADC2 = pyb.ADC(pins['analog_2'])
-        self.DI1  = pyb.Pin(pins['digital_1'], pyb.Pin.IN, pyb.Pin.PULL_DOWN)
-        self.DI2  = pyb.Pin(pins['digital_2'], pyb.Pin.IN, pyb.Pin.PULL_DOWN)
+        self.DI1 = pyb.Pin(pins['digital_1'], pyb.Pin.IN, pyb.Pin.PULL_DOWN)
+        self.DI2 = pyb.Pin(pins['digital_2'], pyb.Pin.IN, pyb.Pin.PULL_DOWN)
         self.LED1 = pyb.DAC(1, bits=12)
         self.LED2 = pyb.DAC(2, bits=12)
-        self.CoolLED1 = Pin('A0',Pin.OUT)
-        self.CoolLED2 = Pin('A2',Pin.OUT)
+        self.CoolLED1 = Pin('A0', Pin.OUT)
+        self.CoolLED2 = Pin('A2', Pin.OUT)
         self.ovs_buffer = array('H',[0]*64) # Oversampling buffer
         self.ovs_timer = pyb.Timer(2)       # Oversampling timer.
         self.sampling_timer = pyb.Timer(3)
@@ -56,6 +46,7 @@ class Photometry():
             if LED_1_current == 0:
                 self.LED_1_value = 0
                 self.CoolLED1.value(0)
+                self.CoolLED2.value(0)
             else: 
                 self.LED_1_value = int(self.LED_slope*LED_1_current+self.LED_offset)
                 self.CoolLED1.value(1)
@@ -64,6 +55,7 @@ class Photometry():
         if LED_2_current is not None:
             if LED_2_current == 0:
                 self.LED_2_value = 0
+                self.CoolLED1.value(0)
                 self.CoolLED2.value(0)
             else: 
                 self.LED_2_value = int(self.LED_slope*LED_2_current+self.LED_offset)
@@ -77,7 +69,7 @@ class Photometry():
         self.buffer_size = buffer_size
         self.sample_buffers = (array('H',[0]*(buffer_size+3)), array('H',[0]*(buffer_size+3)))
         self.buffer_data_mv = (memoryview(self.sample_buffers[0])[:-3], 
-                               memoryview(self.sample_buffers[1])[:-3])      
+                               memoryview(self.sample_buffers[1])[:-3])    
         self.sample = 0
         self.baseline = 0
         self.dig_sample = False
@@ -115,18 +107,20 @@ class Photometry():
         self.stop()
 
     def stop(self):
-        # Stop aquisition
+        # Stop acquisition
         self.sampling_timer.deinit()
         self.ovs_timer.deinit()
         self.LED1.write(0)
         self.LED2.write(0)
+        self.CoolLED1.value(0)
+        self.CoolLED2.value(0)
         self.running = False
         self.usb_serial.setinterrupt(3) # Enable serial interrupt.
         gc.enable()
 
     @micropython.native
     def cont_2_col_ISR(self, t):
-        # Interrupt service routine for 2 color continous acquisition mode.
+        # Interrupt service routine for 2 color continuous acquisition mode.
         self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer) # Read sample of analog 1.
         self.sample = sum(self.ovs_buffer) >> 3
         self.sample_buffers[self.write_buf][self.write_ind] = (self.sample << 1) | self.DI1.value()
