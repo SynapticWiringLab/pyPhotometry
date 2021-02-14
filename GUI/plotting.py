@@ -37,6 +37,9 @@ class Analog_plot(QtGui.QWidget):
         self.controls_layout.addWidget(self.offset_label)
         self.controls_layout.addWidget(self.offset_spinbox)
         self.controls_layout.addStretch()
+        self.amblightcor_checkbox = QtWidgets.QCheckBox('Ambient light correction')
+        self.controls_layout.addWidget(self.amblightcor_checkbox)
+        self.amblightcor_checkbox.setEnabled(False)
 
         # Main layout
         self.vertical_layout = QtGui.QVBoxLayout()

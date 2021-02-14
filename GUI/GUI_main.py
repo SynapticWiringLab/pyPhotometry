@@ -416,4 +416,18 @@ def launch_GUI():
     photometry_GUI.show()
     sys.excepthook = photometry_GUI.excepthook
         self.setGeometry(100, 100, 900, 800) # Left, top, width, height.
+    def select_mode(self, mode):
+        self.board.set_mode(mode)
+        self.rate_text.setText(str(self.board.sampling_rate))
+        self.analog_plot.create_axis(mode)
+        self.mode = mode
+        if self.mode != '2 colour continuous':
+            self.analog_plot.amblightcor_checkbox.setEnabled(True)
+            self.analog_plot.amblightcor_checkbox.stateChanged.connect(lambda:
+                self.board.set_ambientlightcorrection(
+                self.analog_plot.amblightcor_checkbox.isChecked()))
+            self.analog_plot.amblightcor_checkbox.setChecked(True)
+        else:
+            self.analog_plot.amblightcor_checkbox.setChecked(False)
+            self.analog_plot.amblightcor_checkbox.setEnabled(False)
     app.exec_()

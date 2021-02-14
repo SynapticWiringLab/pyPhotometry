@@ -49,6 +49,9 @@ class Acquisition_board(Pyboard):
             self.max_rate = 130   # Hz.
         self.set_sampling_rate(self.max_rate)
         self.exec("p.set_mode('{}')".format(mode))
+        
+    def set_ambientlightcorrection(self, ambientlightcorrection):
+        self.exec("p.set_ambientlightcorrection({})".format(ambientlightcorrection))
 
     def set_LED_current(self, LED_1_current=None, LED_2_current=None):
         if LED_1_current is not None:   
