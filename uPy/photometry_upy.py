@@ -24,15 +24,18 @@ class Photometry():
         self.LED2 = pyb.DAC(2, bits=12)
         self.CoolLED1 = Pin('A0', Pin.OUT)
         self.CoolLED2 = Pin('A2', Pin.OUT)
+        self.CoolLED3 = Pin('A1', Pin.OUT)
+        self.CoolLED4 = Pin('A3', Pin.OUT)
         self.ovs_buffer = array('H',[0]*64) # Oversampling buffer
         self.ovs_timer = pyb.Timer(2)       # Oversampling timer.
         self.sampling_timer = pyb.Timer(3)
         self.usb_serial = pyb.USB_VCP()
         self.running = False
+        self.idx = 1
 
     def set_mode(self, mode):
         # Set the acquisition mode.
-        assert mode in ['2 colour continuous', '1 colour time div.', '2 colour time div.'], 'Invalid mode.'
+        assert mode in ['2 colour continuous', '1 colour time div.', '2 colour time div.', '4 colour time div.'], 'Invalid mode.'
         self.mode = mode
         if mode == '2 colour continuous':
             self.oversampling_rate = 3e5   # Hz.
@@ -50,6 +53,8 @@ class Photometry():
                 self.LED_1_value = 0
                 self.CoolLED1.value(0)
                 self.CoolLED2.value(0)
+                self.CoolLED3.value(0)
+                self.CoolLED4.value(0)
             else: 
                 self.LED_1_value = int(self.LED_slope*LED_1_current+self.LED_offset)
                 self.CoolLED1.value(1)
@@ -60,6 +65,8 @@ class Photometry():
                 self.LED_2_value = 0
                 self.CoolLED1.value(0)
                 self.CoolLED2.value(0)
+                self.CoolLED3.value(0)
+                self.CoolLED4.value(0)
             else: 
                 self.LED_2_value = int(self.LED_slope*LED_2_current+self.LED_offset)
                 self.CoolLED2.value(1)
@@ -69,6 +76,7 @@ class Photometry():
     def start(self, sampling_rate, buffer_size):
         # Start acquisition, stream data to computer, wait for ctrl+c over serial to stop. 
         # Setup sample buffers.
+        self.idx = 1
         self.buffer_size = buffer_size
         self.sample_buffers = (array('H',[0]*(buffer_size+3)), array('H',[0]*(buffer_size+3)))
         self.buffer_data_mv = (memoryview(self.sample_buffers[0])[:-3], 
@@ -117,6 +125,9 @@ class Photometry():
         self.LED2.write(0)
         self.CoolLED1.value(0)
         self.CoolLED2.value(0)
+        self.CoolLED3.value(0)
+        self.CoolLED4.value(0)
+        self.idx = 1
         self.running = False
         self.usb_serial.setinterrupt(3) # Enable serial interrupt.
         gc.enable()
@@ -142,33 +153,75 @@ class Photometry():
     def time_div_ISR(self, t):
         # Interrupt service routine for time division + baseline subtraction acquisition 
         # modes. 
-        if self.write_ind % 2:   # Odd samples are LED 2 illumination.
-            if self.one_color:   # Same analog input read for LEDs 1 and 2.
+        if self.mode == '4 colour time div.':
+            if self.idx == 1:   			# calcium green
                 self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
-            else:                # Different analog inputs read for LEDs 1 and 2.
+                self.LED1.write(self.LED_1_value)
+                self.CoolLED1.value(1)
+            elif self.idx == 2:   			# calcium red
                 self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
-            self.LED2.write(self.LED_2_value)
-        else:                    # Even samples are LED 1 illumination.
-            self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
-            self.LED1.write(self.LED_1_value)
+                self.LED2.write(self.LED_2_value)
+                self.CoolLED3.value(1)
+            elif self.idx == 3:             # isosbestic green
+                self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
+                self.CoolLED2.value(1)
+            elif self.idx == 4:   			# isosbestic red
+                self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
+                self.CoolLED4.value(1)
+        else:
+            if self.write_ind % 2:   # Odd samples are LED 2 illumination.
+                if self.one_color:   # Same analog input read for LEDs 1 and 2.
+                    self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
+                else:                # Different analog inputs read for LEDs 1 and 2.
+                    self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
+                self.LED2.write(self.LED_2_value)
+                self.CoolLED2.value(1)
+            else:                    # Even samples are LED 1 illumination.
+                self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
+                self.LED1.write(self.LED_1_value)
+                self.CoolLED1.value(1)
         self.baseline = sum(self.ovs_buffer) >> 3            
         pyb.udelay(300) # Wait before reading ADC (us).
-        # Acquire sample, subtract baseline, store in buffer. 
-        if self.write_ind % 2:
-            if self.one_color:
+        # Acquire sample, subtract baseline, store in buffer.
+        if self.mode == '4 colour time div.':
+            if self.idx == 1:               # calcium green
                 self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
-            else:
+                self.LED1.write(0)
+                self.CoolLED1.value(0)
+                self.dig_sample = self.DI1.value()
+            elif self.idx == 2:             # calcium red
                 self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
-            self.LED2.write(0)
-            self.CoolLED2.value(0)
-            self.dig_sample = self.DI2.value()
+                self.LED2.write(0)
+                self.CoolLED3.value(0)
+                self.dig_sample = self.DI2.value()
+            elif self.idx == 3:             # isosbestic green
+                self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
+                self.LED1.write(0)
+                self.CoolLED2.value(0)
+                self.dig_sample = self.DI1.value()
+            elif self.idx == 4:             # isosbestic red
+                self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
+                self.LED2.write(0)
+                self.CoolLED4.value(0)
+                self.dig_sample = self.DI2.value()
+            self.idx = self.idx + 1
+            if self.idx > 4:
+                self.idx = 1
         else:
-            self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
-            self.LED1.write(0)
-            self.CoolLED2.value(1)
-            self.dig_sample =self.DI1.value()
+            if self.write_ind % 2:
+                if self.one_color:
+                    self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
+                else:
+                    self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
+                self.LED2.write(0)
+                self.CoolLED2.value(0)
+                self.dig_sample = self.DI2.value()
+            else:
+                self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
+                self.LED1.write(0)
+                self.CoolLED1.value(0)
+                self.dig_sample = self.DI1.value()
         self.sample = sum(self.ovs_buffer) >> 3
-        self.sample = max(self.sample - self.baseline, 0)
         if self.ambientlightcorrection == True:
             self.sample = max(self.sample - self.baseline, 0)
         else:
