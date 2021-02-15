@@ -40,13 +40,15 @@ class Acquisition_board(Pyboard):
 
     def set_mode(self, mode):
         # Set control channel mode.
-        assert mode in ['2 colour continuous', '1 colour time div.', '2 colour time div.'], \
-            "Invalid mode, value values: '2 colour continuous', '1 colour time div.' or '2 colour time div.'."
+        assert mode in ['2 colour continuous', '1 colour time div.', '2 colour time div.', '4 colour time div.'], \
+            "Invalid mode, value values: '2 colour continuous', '1 colour time div.', '2 colour time div.' or '4 colour time div.'."
         self.mode = mode
         if mode == '2 colour continuous':   # 2 channel GFP/RFP acquisition mode.
             self.max_rate = 1000  # Maximum sampling rate allowed for this mode.
-        elif mode in ('1 colour time div.', '2 colour time div.'): # GCaMP and isosbestic using time division multiplexing.
+        elif mode in ('1 colour time div.', '2 colour time div.'): # GFP and isosbestic using time division multiplexing.
             self.max_rate = 130   # Hz.
+        elif mode == '4 colour time div.': # GFP, RFP and respective isosbestic using time division multiplexing.
+            self.max_rate = 65    # Hz.
         self.set_sampling_rate(self.max_rate)
         self.exec("p.set_mode('{}')".format(mode))
         
@@ -74,7 +76,12 @@ class Acquisition_board(Pyboard):
 
     def start(self):
         '''Start data aquistion and streaming on the pyboard.'''
-        self.exec_raw_no_follow('p.start({},{})'.format(self.sampling_rate, self.buffer_size))
+        if self.mode == '4 colour time div.':
+            sampratetosend = self.sampling_rate * 2
+        else:
+            sampratetosend = self.sampling_rate
+        print(sampratetosend)
+        self.exec_raw_no_follow('p.start({},{})'.format(sampratetosend, self.buffer_size))
         self.chunk_number = 0 # Number of data chunks recieved from board, modulo 2**16.
         self.running = True
 
@@ -101,7 +108,10 @@ class Acquisition_board(Pyboard):
             with open(os.path.join(data_dir, file_name[:-4] + '.json'), 'w') as headerfile:
                 headerfile.write(json.dumps(header_dict, sort_keys=True, indent=4))
             self.data_file = open(file_path, 'w')
-            self.data_file.write('Analog1, Analog2, Digital1, Digital2\n')
+            if self.mode == '4 colour time div.':
+                self.data_file.write('Analog1_ca, Analog1_iso, Analog2_ca, Analog_iso, Digital1, Digital2\n')
+            else:
+                self.data_file.write('Analog1, Analog2, Digital1, Digital2\n')
         return file_name
 
     def stop_recording(self):
@@ -149,15 +159,57 @@ class Acquisition_board(Pyboard):
                 ADC2 = signal[1::2]
                 DI1 = digital[ ::2]
                 DI2 = digital[1::2]
+                # Deal with shared ADC channels for 2 colours AND time-multiplexing (2x2=4 colours).
+                if self.mode == '4 colour time div.':
+                    if self.chunk_number > 1: # look for data in the buffer
+                        prevADC1 = self.buffer4colADC1 # past incomplete ADC1 data
+                        prevADC2 = self.buffer4colADC2 # past incomplete ADC2 data
+                        prevDI1 = self.buffer4colDI1 # past incomplete DI1 data
+                        prevDI2 = self.buffer4colDI2 # past incomplete DI2 data
+                        ADC1 = np.concatenate((prevADC1, ADC1)) # combine past incomplete with current ADC1 data
+                        ADC2 = np.concatenate((prevADC2, ADC2)) # combine past incomplete with current ADC2 data
+                        DI1 = np.concatenate((prevDI1, DI1)) # combine past incomplete with current DI1 data
+                        DI2 = np.concatenate((prevDI2, DI2)) # combine past incomplete with current DI2 data
+                    period = 2 # period of time multiplexing (in number of samples)
+                    allidx = range(len(ADC1)) # all data indices
+                    lastidx = allidx[period-1::period] # last index of each chunk
+                    lim = max(lastidx, default=-2) # last index of the last chunk (-2 is there in case no entire chunk has been received)
+                    curADC1 = ADC1[0:lim+1] # data that can already be saved/displayed
+                    bufADC1 = ADC1[lim+1:]  # data to be be saved/displayed at the next iteration
+                    curADC2 = ADC2[0:lim+1] # data that can already be saved/displayed
+                    bufADC2 = ADC2[lim+1:]  # data to be be saved/displayed at the next iteration
+                    curDI1 = DI1[0:lim+1] # data that can already be saved/displayed
+                    bufDI1 = DI1[lim+1:]  # data to be be saved/displayed at the next iteration
+                    curDI2 = DI2[0:lim+1] # data that can already be saved/displayed
+                    bufDI2 = DI2[lim+1:]  # data to be be saved/displayed at the next iteration
+                    ADC1_green_ca  = curADC1[        ::period] # green-calcium
+                    ADC1_green_iso = curADC1[period-1::period] # green-isosbestic
+                    ADC2_red_ca    = curADC2[        ::period] # red-calcium
+                    ADC2_red_iso   = curADC2[period-1::period] # red-isosbestic     
+                    curDI1 = curDI1[::period] # we throw away hald of the signals given that this is sampled with higher smapling rate
+                    curDI2 = curDI2[::period] # we throw away hald of the signals given that this is sampled with higher smapling rate
+                    self.buffer4colADC1 = bufADC1 # save data that is not a multiple of period for later
+                    self.buffer4colADC2 = bufADC2 # save data that is not a multiple of period for later
+                    self.buffer4colDI1 = bufDI1 # save data that is not a multiple of period for later          
+                    self.buffer4colDI2 = bufDI2 # save data that is not a multiple of period for later
+
                 # Write data to disk.
                 if self.data_file:
                     if self.file_type == 'ppd': # Binary data file.
                         self.data_file.write(data.tobytes())
                     else: # CSV data file.
-                        np.savetxt(self.data_file, np.array([ADC1,ADC2,DI1,DI2], dtype=int).T, 
-                                   fmt='%d', delimiter=',')
-                return ADC1, ADC2, DI1, DI2
-
+                        if self.mode == '4 colour time div.':
+                            np.savetxt(self.data_file, np.array([ADC1_green_ca,ADC1_green_iso,ADC2_red_ca,ADC2_red_iso,curDI1,curDI2], dtype=int).T, 
+                                       fmt='%d', delimiter=',')
+                        else:
+                            np.savetxt(self.data_file, np.array([ADC1,ADC2,DI1,DI2], dtype=int).T, 
+                                       fmt='%d', delimiter=',')
+                # Return data for plotting.
+                if self.mode == '4 colour time div.':
+                    return ADC1_green_ca, ADC1_green_iso, ADC2_red_ca, ADC2_red_iso, curDI1, curDI2
+                else:
+                    return ADC1, ADC2, DI1, DI2
+                
     # -----------------------------------------------------------------------
     # File transfer
     # -----------------------------------------------------------------------

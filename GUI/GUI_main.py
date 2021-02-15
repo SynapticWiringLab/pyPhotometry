@@ -29,6 +29,7 @@ class Photometry_GUI(QtGui.QWidget):
     def __init__(self, parent=None):
         super(QtGui.QWidget, self).__init__(parent)
         self.setWindowTitle('pyPhotometry GUI v{}'.format(config.VERSION))
+        self.setGeometry(100, 100, 900, 800) # Left, top, width, height.
 
         # Variables
 
@@ -80,7 +81,7 @@ class Photometry_GUI(QtGui.QWidget):
 
         self.mode_label = QtGui.QLabel("Mode:")
         self.mode_select = QtGui.QComboBox()
-        self.mode_select.addItems(['2 colour continuous', '1 colour time div.', '2 colour time div.'])
+        self.mode_select.addItems(['2 colour continuous', '1 colour time div.', '2 colour time div.', '4 colour time div.'])
         set_cbox_item(self.mode_select, config.default_acquisition_mode)
         self.rate_label = QtGui.QLabel('Sampling rate (Hz):')
         self.rate_text = QtGui.QLineEdit()
@@ -239,7 +240,6 @@ class Photometry_GUI(QtGui.QWidget):
                 lambda v:self.board.set_LED_current(LED_1_current=int(v)))
             self.current_spinbox_2.valueChanged.connect(
                 lambda v:self.board.set_LED_current(LED_2_current=int(v)))
-            self
             self.connected = True
         except SerialException:
             self.status_text.setText('Connection failed')
@@ -274,6 +274,17 @@ class Photometry_GUI(QtGui.QWidget):
     def select_mode(self, mode):
         self.board.set_mode(mode)
         self.rate_text.setText(str(self.board.sampling_rate))
+        self.analog_plot.create_axis(mode)
+        self.mode = mode
+        if self.mode != '2 colour continuous':
+            self.analog_plot.amblightcor_checkbox.setEnabled(True)
+            self.analog_plot.amblightcor_checkbox.stateChanged.connect(lambda:
+                self.board.set_ambientlightcorrection(
+                self.analog_plot.amblightcor_checkbox.isChecked()))
+            self.analog_plot.amblightcor_checkbox.setChecked(True)
+        else:
+            self.analog_plot.amblightcor_checkbox.setChecked(False)
+            self.analog_plot.amblightcor_checkbox.setEnabled(False)
 
     def rate_text_change(self, text):
         if text:
@@ -303,6 +314,7 @@ class Photometry_GUI(QtGui.QWidget):
         self.board_groupbox.setEnabled(False)
         self.settings_groupbox.setEnabled(False)
         self.start_button.setEnabled(False)
+        self.analog_plot.amblightcor_checkbox.setEnabled(False)
         if self.test_data_path():
             self.record_button.setEnabled(True)
         self.stop_button.setEnabled(True)
@@ -341,6 +353,7 @@ class Photometry_GUI(QtGui.QWidget):
         self.subject_text.setEnabled(True)
         self.data_dir_text.setEnabled(True)
         self.data_dir_button.setEnabled(True)
+        self.analog_plot.amblightcor_checkbox.setEnabled(True)
         self.status_text.setText('Connected')
         self.record_clock.stop()
 
@@ -363,18 +376,21 @@ class Photometry_GUI(QtGui.QWidget):
         # and update the plot.
         data = self.board.process_data()
         if data:
-            new_ADC1, new_ADC2, new_DI1, new_DI2 = data
-            # Update plots.
-            self.analog_plot.update(new_ADC1, new_ADC2)
-            self.digital_plot.update(new_DI1, new_DI2)
-            self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot)
+            if self.mode == '4 colour time div.':
+                new_ADC1_green_ca, new_ADC1_green_iso, new_ADC2_red_ca, new_ADC2_red_iso, new_DI1, new_DI2 = data
+                self.analog_plot.update(new_ADC1_green_ca, new_ADC1_green_iso, new_ADC2_red_ca, new_ADC2_red_iso)
+                self.digital_plot.update(new_DI1, new_DI2)
+                self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot)
+            else:
+                new_ADC1, new_ADC2, new_DI1, new_DI2 = data
+                self.analog_plot.update(new_ADC1, new_ADC2, None, None)
+                self.digital_plot.update(new_DI1, new_DI2)
+                self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot)
             self.record_clock.update()
 
     def refresh(self):
         # Called regularly while not running, scan serial ports for 
         # connected boards and update ports list if changed.
-        # ports = set([c[0] for c in list_ports.comports()
-        #              if ('Pyboard' in c[1]) or ('USB Serial Device' in c[1])])
         ports = set([c[0] for c in list_ports.comports()])
         if not ports == self.available_ports:
             self.port_select.clear()
@@ -415,19 +431,4 @@ def launch_GUI():
     photometry_GUI = Photometry_GUI()
     photometry_GUI.show()
     sys.excepthook = photometry_GUI.excepthook
-        self.setGeometry(100, 100, 900, 800) # Left, top, width, height.
-    def select_mode(self, mode):
-        self.board.set_mode(mode)
-        self.rate_text.setText(str(self.board.sampling_rate))
-        self.analog_plot.create_axis(mode)
-        self.mode = mode
-        if self.mode != '2 colour continuous':
-            self.analog_plot.amblightcor_checkbox.setEnabled(True)
-            self.analog_plot.amblightcor_checkbox.stateChanged.connect(lambda:
-                self.board.set_ambientlightcorrection(
-                self.analog_plot.amblightcor_checkbox.isChecked()))
-            self.analog_plot.amblightcor_checkbox.setChecked(True)
-        else:
-            self.analog_plot.amblightcor_checkbox.setChecked(False)
-            self.analog_plot.amblightcor_checkbox.setEnabled(False)
     app.exec_()
