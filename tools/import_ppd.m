@@ -27,11 +27,23 @@ function data_struct = import_ppd(file_path)
 	% Extract signals.
 	analog = bitshift(data, -1);        % Analog signal is most significant 15 bits.
 	digital = logical(bitand(data, 1)); % Digital signal is least significant bit.
-	% Alternating samples are signals 1 and 2.
-	data_struct.analog_1 = analog(1:2:end) * data_struct.volts_per_division(1);
-	data_struct.analog_2 = analog(2:2:end) * data_struct.volts_per_division(2);
-	data_struct.digital_1 = digital(1:2:end);
-	data_struct.digital_2 = digital(2:2:end);
-	data_struct.time = (0:length(data_struct.analog_1)-1)*1000/data_struct.sampling_rate % Time relative to start of recording (ms).
+    if strcmpi(data_struct.mode, '4 colour time div.')
+        data_struct.sampling_rate = data_struct.sampling_rate/2;
+        lim = 4 * floor(numel(analog)/4);
+        data_struct.analog_1_ca  = analog(1:4:lim) * data_struct.volts_per_division(1);
+        data_struct.analog_2_ca  = analog(2:4:lim) * data_struct.volts_per_division(2);
+        data_struct.analog_1_iso = analog(3:4:lim) * data_struct.volts_per_division(1);
+        data_struct.analog_2_iso = analog(4:4:lim) * data_struct.volts_per_division(2);
+        data_struct.digital_1 = digital(1:4:lim);
+        data_struct.digital_2 = digital(2:4:lim);
+        data_struct.time = (0:length(data_struct.analog_1_ca)-1)*1000/data_struct.sampling_rate;
+    else
+        % Alternating samples are signals 1 and 2.
+        data_struct.analog_1 = analog(1:2:end) * data_struct.volts_per_division(1);
+        data_struct.analog_2 = analog(2:2:end) * data_struct.volts_per_division(2);
+        data_struct.digital_1 = digital(1:2:end);
+        data_struct.digital_2 = digital(2:2:end);
+        data_struct.time = (0:length(data_struct.analog_1)-1)*1000/data_struct.sampling_rate; % Time relative to start of recording (ms).
+    end
 
 end
