@@ -80,7 +80,6 @@ class Acquisition_board(Pyboard):
             sampratetosend = self.sampling_rate * 2
         else:
             sampratetosend = self.sampling_rate
-        print(sampratetosend)
         self.exec_raw_no_follow('p.start({},{})'.format(sampratetosend, self.buffer_size))
         self.chunk_number = 0 # Number of data chunks recieved from board, modulo 2**16.
         self.running = True
