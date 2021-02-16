@@ -48,7 +48,7 @@ class Acquisition_board(Pyboard):
         elif mode in ('1 colour time div.', '2 colour time div.'): # GFP and isosbestic using time division multiplexing.
             self.max_rate = 130   # Hz.
         elif mode == '4 colour time div.': # GFP, RFP and respective isosbestic using time division multiplexing.
-            self.max_rate = 65    # Hz.
+            self.max_rate = 64    # Hz.
         self.set_sampling_rate(self.max_rate)
         self.exec("p.set_mode('{}')".format(mode))
         
