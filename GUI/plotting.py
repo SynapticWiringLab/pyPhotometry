@@ -190,6 +190,7 @@ class Event_triggered_plot():
         self.prev_plot.clear()
         self.ave_plot.clear()
 
+    def update(self, new_DI1, digital, analog, mode):
         # Update event triggered average plot.
         new_data_len = len(new_DI1)
         trig_section = digital.DI1.history[-self.window[1]-new_data_len-1:-self.window[1]]
