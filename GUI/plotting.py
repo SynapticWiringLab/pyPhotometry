@@ -190,7 +190,6 @@ class Event_triggered_plot():
         self.prev_plot.clear()
         self.ave_plot.clear()
 
-    def update(self, new_DI1, digital, analog):
         # Update event triggered average plot.
         new_data_len = len(new_DI1)
         trig_section = digital.DI1.history[-self.window[1]-new_data_len-1:-self.window[1]]
@@ -234,17 +233,17 @@ class Record_clock():
         self.clock_text.setFont(QtGui.QFont('arial',12, QtGui.QFont.Bold))
         axis.getViewBox().addItem(self.clock_text, ignoreBounds=True)
         self.clock_text.setParentItem(axis.getViewBox())
-        self.clock_text.setPos(240,10)
+        self.clock_text.setPos(740,10)
         self.recording_text = pg.TextItem(text='', color=(255,255,255))
         self.recording_text.setFont(QtGui.QFont('arial',12,QtGui.QFont.Bold))
         axis.getViewBox().addItem(self.recording_text, ignoreBounds=True)
         self.recording_text.setParentItem(axis.getViewBox())
-        self.recording_text.setPos(110,10)
+        self.recording_text.setPos(650,10)
         self.warning_text = pg.TextItem(text='!!! NOT RECORDING !!!', color=(255,000,000))
         self.warning_text.setFont(QtGui.QFont('arial',30,QtGui.QFont.Bold))
         axis.getViewBox().addItem(self.warning_text, ignoreBounds=True)
         self.warning_text.setParentItem(axis.getViewBox())
-        self.warning_text.setPos(150,75)
+        self.warning_text.setPos(200,125)
         self.start_time = None
 
     def start(self):
