@@ -380,12 +380,12 @@ class Photometry_GUI(QtGui.QWidget):
                 new_ADC1_green_ca, new_ADC1_green_iso, new_ADC2_red_ca, new_ADC2_red_iso, new_DI1, new_DI2 = data
                 self.analog_plot.update(new_ADC1_green_ca, new_ADC1_green_iso, new_ADC2_red_ca, new_ADC2_red_iso)
                 self.digital_plot.update(new_DI1, new_DI2)
-                self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot)
+                self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot, self.mode)
             else:
                 new_ADC1, new_ADC2, new_DI1, new_DI2 = data
                 self.analog_plot.update(new_ADC1, new_ADC2, None, None)
                 self.digital_plot.update(new_DI1, new_DI2)
-                self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot)
+                self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot, self.mode)
             self.record_clock.update()
 
     def refresh(self):

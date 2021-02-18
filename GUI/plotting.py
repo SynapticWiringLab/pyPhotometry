@@ -197,7 +197,7 @@ class Event_triggered_plot():
         rising_edges = np.where(np.diff(trig_section)==1)[0]
         for i, edge in enumerate(rising_edges):
             edge_ind = -self.window[1]-new_data_len-1+edge # Position of edge in signal history.
-            if self.mode == '4 colour time div.':
+            if mode == '4 colour time div.':
                 ev_trig_sig = analog.ADC1_green_ca.history[edge_ind + self.window[0]:edge_ind + self.window[1]]
             else:
                 ev_trig_sig = analog.ADC1.history[edge_ind+self.window[0]:edge_ind+self.window[1]]
@@ -221,8 +221,7 @@ class Signal_history():
         # Move old data along buffer, store new data samples.
         data_len = len(new_data)
         self.history = np.roll(self.history, -data_len)
-        if new_data.any():
-            self.history[-data_len:] = new_data
+        self.history[-data_len:] = new_data
 
 # Record_clock ----------------------------------------------------
 
