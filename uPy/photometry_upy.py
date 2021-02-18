@@ -176,7 +176,7 @@ class Photometry():
                 self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
                 self.LED2.write(self.LED_2_value)
                 self.CoolLED3.value(1)
-            elif self.idx == 3:             # isosbestic green
+            elif self.idx == 3:              # isosbestic green
                 self.ADC1.read_timed(self.ovs_buffer, self.ovs_timer)
                 self.CoolLED2.value(1)
             elif self.idx == 4:   			# isosbestic red
