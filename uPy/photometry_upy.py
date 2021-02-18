@@ -181,7 +181,7 @@ class Photometry():
                 self.CoolLED2.value(1)
             elif self.idx == 4:   			# isosbestic red
                 self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
-                self.CoolLED4.value(1)
+                self.CoolLED1.value(1)
         else:
             if self.write_ind % 2:   # Odd samples are LED 2 illumination.
                 if self.one_color:   # Same analog input read for LEDs 1 and 2.
@@ -216,7 +216,7 @@ class Photometry():
             elif self.idx == 4:             # isosbestic red
                 self.ADC2.read_timed(self.ovs_buffer, self.ovs_timer)
                 self.LED2.write(0)
-                self.CoolLED4.value(0)
+                self.CoolLED1.value(0)
                 self.dig_sample = self.DI2.value()
             self.idx = self.idx + 1
             if self.idx > 4:
