@@ -81,7 +81,7 @@ class Acquisition_board(Pyboard):
         else:
             sampratetosend = self.sampling_rate
         self.exec_raw_no_follow('p.start({},{})'.format(sampratetosend, self.buffer_size))
-        self.chunk_number = 0 # Number of data chunks recieved from board, modulo 2**16.
+        self.chunk_number = 0 # Number of data chunks received from board, modulo 2**16.
         self.running = True
 
     def record(self, data_dir, subject_ID, file_type='ppd'):
@@ -191,7 +191,6 @@ class Acquisition_board(Pyboard):
                     self.buffer4colADC2 = bufADC2 # save data that is not a multiple of period for later
                     self.buffer4colDI1 = bufDI1 # save data that is not a multiple of period for later          
                     self.buffer4colDI2 = bufDI2 # save data that is not a multiple of period for later
-
                 # Write data to disk.
                 if self.data_file:
                     if self.file_type == 'ppd': # Binary data file.

@@ -48,28 +48,28 @@ class Analog_plot(QtGui.QWidget):
         self.axis.setXRange(-history_dur, history_dur*0.02, padding=0)
         self.mode = mode
         if self.mode == '2 colour continuous':
-            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102, 204, 000)),
+            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102,204,000)),
                                          name='analog 1 (green calcium, 470nm excitation)')
-            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204, 000, 000)),
+            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204,000,000)),
                                          name='analog 2 (red calcium, 550nm excitation)')
         elif self.mode == '1 colour time div.':
-            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102, 204, 000)),
+            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102,204,000)),
                                          name='analog 1 (green calcium, 470nm excitation)')
-            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204, 255, 153)),
+            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204,255,153)),
                                          name='analog 2 (green isosbestic, 405nm excitation)')
         elif self.mode == '2 colour time div.':
-            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102, 204, 000)),
+            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102,204,000)),
                                          name='analog 1 (green calcium, 470nm excitation)')
-            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204, 000, 000)),
+            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204,000,000)),
                                          name='analog 2 (red calcium, 550nm excitation)')
         elif self.mode == '4 colour time div.':
-            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102, 204, 000)),
+            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102,204,000)),
                                          name='analog 1 (green calcium, 470nm excitation)')
-            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204, 255, 153)),
+            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204,255,153)),
                                          name='analog 1 (green isosbestic, 405nm excitation)')
-            self.plot_3 = self.axis.plot(pen=pg.mkPen(color=(204, 000, 000)),
+            self.plot_3 = self.axis.plot(pen=pg.mkPen(color=(204,000,000)),
                                          name='analog 2 (red calcium, 550nm excitation)')
-            self.plot_4 = self.axis.plot(pen=pg.mkPen(color=(255, 153, 153)),
+            self.plot_4 = self.axis.plot(pen=pg.mkPen(color=(255,153,153)),
                                          name='analog 2 (red isosbestic, 470nm excitation)')
 
     def reset(self, sampling_rate):
@@ -209,7 +209,7 @@ class Event_triggered_plot():
                 self.prev_plot.setData(self.x, ev_trig_sig)
                 self.ave_plot.setData(self.x, self.average)
 
- # Signal_history ------------------------------------------------------------
+# Signal_history ------------------------------------------------------------
 
 class Signal_history():
     # Buffer to store the recent history of a signal.
@@ -245,7 +245,6 @@ class Record_clock():
         axis.getViewBox().addItem(self.warning_text, ignoreBounds=True)
         self.warning_text.setParentItem(axis.getViewBox())
         self.warning_text.setPos(150,75)
-        
         self.start_time = None
 
     def start(self):

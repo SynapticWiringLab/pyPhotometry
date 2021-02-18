@@ -1,4 +1,3 @@
-# Check that depndencies are installed then launch the pyControl GUI.
 
 import sys
 import os
@@ -15,4 +14,5 @@ except Exception as e:
 
 # Launch the GUI.
 from GUI.GUI_main import launch_GUI
+# Check that dependencies are installed then launch the pyControl GUI.
 launch_GUI()
