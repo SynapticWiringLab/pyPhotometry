@@ -101,13 +101,13 @@ class Analog_plot(QtGui.QWidget):
             if self.AC_mode: 
                 # Plot signals with mean removed.
                 y1 = self.ADC1_green_ca.history - np.mean(self.ADC1_green_ca.history) \
-                    + self.offset_spinbox.value()/1000
+                    + 1.5*self.offset_spinbox.value()/1000
                 y2 = self.ADC1_green_iso.history - np.mean(self.ADC1_green_iso.history) \
-                    + 2*self.offset_spinbox.value()/1000
+                    + 0.5*self.offset_spinbox.value()/1000
                 y3 = self.ADC2_red_ca.history - np.mean(self.ADC2_red_ca.history) \
-                    + 3*self.offset_spinbox.value()/1000
+                    - 0.5*self.offset_spinbox.value()/1000
                 y4 = self.ADC2_red_iso.history - np.mean(self.ADC2_red_iso.history) \
-                    + 4*self.offset_spinbox.value()/1000
+                    - 1.5*self.offset_spinbox.value()/1000
                 self.plot_1.setData(self.x, y1)
                 self.plot_2.setData(self.x, y2)
                 self.plot_3.setData(self.x, y3)
