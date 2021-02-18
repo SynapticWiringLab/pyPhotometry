@@ -48,7 +48,7 @@ class Acquisition_board(Pyboard):
         elif mode in ('1 colour time div.', '2 colour time div.'): # GFP and isosbestic using time division multiplexing.
             self.max_rate = 130   # Hz.
         elif mode == '4 colour time div.': # GFP, RFP and respective isosbestic using time division multiplexing.
-            self.max_rate = 64    # Hz.
+            self.max_rate = 65    # Hz.
         self.set_sampling_rate(self.max_rate)
         self.exec("p.set_mode('{}')".format(mode))
         
@@ -70,7 +70,11 @@ class Acquisition_board(Pyboard):
 
     def set_sampling_rate(self, sampling_rate):
         self.sampling_rate = int(min(sampling_rate, self.max_rate))
-        self.buffer_size = max(2, int(self.sampling_rate // 40) * 2)
+        if self.mode == '4 colour time div.':
+            sr = self.sampling_rate * 2
+        else:
+            sr = self.sampling_rate
+        self.buffer_size = max(2, int(sr // 40) * 2)
         self.serial_chunk_size = (self.buffer_size+3)*2
         return self.sampling_rate
 
