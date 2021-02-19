@@ -221,7 +221,8 @@ class Signal_history():
         # Move old data along buffer, store new data samples.
         data_len = len(new_data)
         self.history = np.roll(self.history, -data_len)
-        self.history[-data_len:] = new_data
+        if len(new_data) > 0:
+            self.history[-data_len:] = new_data
 
 # Record_clock ----------------------------------------------------
 
