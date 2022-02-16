@@ -62,7 +62,7 @@ class Analog_plot(QtGui.QWidget):
                                          name='analog 1 (green calcium, 470nm excitation)')
             self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204,000,000)),
                                          name='analog 2 (red calcium, 550nm excitation)')
-        elif self.mode == '4 colour time div.':
+        elif self.mode in ('1site-4colors', '2sites-4colors'):
             self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102,204,000)),
                                          name='analog 1 (green calcium, 470nm excitation)')
             self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204,255,153)),
@@ -71,33 +71,45 @@ class Analog_plot(QtGui.QWidget):
                                          name='analog 2 (red calcium, 550nm excitation)')
             self.plot_4 = self.axis.plot(pen=pg.mkPen(color=(255,153,153)),
                                          name='analog 2 (red isosbestic, 470nm excitation)')
+        elif self.mode in ('1site-3colors', '2sites-3colors'):
+            self.plot_1 = self.axis.plot(pen=pg.mkPen(color=(102,204,000)),
+                                         name='analog 1 (green calcium, 470nm excitation)')
+            self.plot_2 = self.axis.plot(pen=pg.mkPen(color=(204,255,153)),
+                                         name='analog 1 (green isosbestic, 405nm excitation)')
+            self.plot_3 = self.axis.plot(pen=pg.mkPen(color=(204,000,000)),
+                                         name='analog 2 (red calcium, 550nm excitation)')
 
     def reset(self, sampling_rate):
         history_length = int(sampling_rate * history_dur)
-        if self.mode == '4 colour time div.':
+        if self.mode in ('1site-4colors', '2sites-4colors'):
             self.ADC1_green_ca  = Signal_history(history_length)
             self.ADC1_green_iso = Signal_history(history_length)
             self.ADC2_red_ca    = Signal_history(history_length)
             self.ADC2_red_iso   = Signal_history(history_length)
+        elif self.mode in ('1site-3colors', '2sites-3colors'):
+            self.ADC1_green_ca  = Signal_history(history_length)
+            self.ADC1_green_iso = Signal_history(history_length)
+            self.ADC2_red_ca    = Signal_history(history_length)
         else:
             self.ADC1 = Signal_history(history_length)
             self.ADC2 = Signal_history(history_length)
         self.x = np.linspace(-history_dur, 0, history_length) # X axis for timeseries plots.
 
     def update(self, input1, input2, input3, input4):
-        if self.mode == '4 colour time div.':
+        if self.mode in ('1site-4colors', '2sites-4colors', '1site-3colors', '2sites-3colors'):
             new_ADC1_green_ca  = input1
             new_ADC1_green_iso = input2
             new_ADC2_red_ca    = input3
-            new_ADC2_red_iso   = input4
             new_ADC1_green_ca  = 3.3 * new_ADC1_green_ca / (1 << 15) # Convert to Volts.
             new_ADC1_green_iso = 3.3 * new_ADC1_green_iso / (1 << 15)
             new_ADC2_red_ca    = 3.3 * new_ADC2_red_ca / (1 << 15)
-            new_ADC2_red_iso   = 3.3 * new_ADC2_red_iso / (1 << 15)
             self.ADC1_green_ca.update(new_ADC1_green_ca)
             self.ADC1_green_iso.update(new_ADC1_green_iso)
             self.ADC2_red_ca.update(new_ADC2_red_ca)
-            self.ADC2_red_iso.update(new_ADC2_red_iso)
+            if self.mode in ('1site-4colors', '2sites-4colors'):
+                new_ADC2_red_iso = input4
+                new_ADC2_red_iso   = 3.3 * new_ADC2_red_iso / (1 << 15)
+                self.ADC2_red_iso.update(new_ADC2_red_iso)
             if self.AC_mode: 
                 # Plot signals with mean removed.
                 y1 = self.ADC1_green_ca.history - np.mean(self.ADC1_green_ca.history) \
@@ -106,17 +118,19 @@ class Analog_plot(QtGui.QWidget):
                     + 0.5*self.offset_spinbox.value()/1000
                 y3 = self.ADC2_red_ca.history - np.mean(self.ADC2_red_ca.history) \
                     - 0.5*self.offset_spinbox.value()/1000
-                y4 = self.ADC2_red_iso.history - np.mean(self.ADC2_red_iso.history) \
-                    - 1.5*self.offset_spinbox.value()/1000
                 self.plot_1.setData(self.x, y1)
                 self.plot_2.setData(self.x, y2)
                 self.plot_3.setData(self.x, y3)
-                self.plot_4.setData(self.x, y4)
+                if self.mode in ('1site-4colors', '2sites-4colors'):
+                    y4 = self.ADC2_red_iso.history - np.mean(self.ADC2_red_iso.history) \
+                         - 1.5 * self.offset_spinbox.value() / 1000
+                    self.plot_4.setData(self.x, y4)
             else:
                 self.plot_1.setData(self.x, self.ADC1_green_ca.history)
                 self.plot_2.setData(self.x, self.ADC1_green_iso.history)
                 self.plot_3.setData(self.x, self.ADC2_red_ca.history)
-                self.plot_4.setData(self.x, self.ADC2_red_iso.history)   
+                if self.mode in ('1site-4colors', '2sites-4colors'):
+                    self.plot_4.setData(self.x, self.ADC2_red_iso.history)
         else:
             new_ADC1 = input1
             new_ADC2 = input2
@@ -197,7 +211,7 @@ class Event_triggered_plot():
         rising_edges = np.where(np.diff(trig_section)==1)[0]
         for i, edge in enumerate(rising_edges):
             edge_ind = -self.window[1]-new_data_len-1+edge # Position of edge in signal history.
-            if mode == '4 colour time div.':
+            if mode in ('1site-4colors', '2sites-4colors', '1site-3colors', '2sites-3colors'):
                 ev_trig_sig = analog.ADC1_green_ca.history[edge_ind + self.window[0]:edge_ind + self.window[1]]
             else:
                 ev_trig_sig = analog.ADC1.history[edge_ind+self.window[0]:edge_ind+self.window[1]]

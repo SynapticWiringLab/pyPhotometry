@@ -8,7 +8,7 @@ Alexander Dieter to adapt to the CoolLED (see first commits), then most modifica
 The code is used on a regular basis in the Wiegert lab: https://simon-wiegert.weebly.com/.
 
 Main modifications include:
-- The creation of a 4 colour photometry mode for e.g. green and red GECIs and their respective isosbestic points. In that case, samples are acquired sequentially in the following order: green-calcium, red-calcium, green-isosbestic, red-isosbestic.
-- Compatibility with CoolLED system.
-- Add a checkbox to enable/disable ambient light correction in order to facilitate debugging and comparison of hardware.
+- The creation of a new acquisition modes with parallel recordings (through time division) of green and red indicators (with isosbestic) in the same or different sites (i.e., through different fibre optic cannula).
+- Compatibility with CoolLED light source.
+- A checkbox to enable/disable ambient light correction in order to facilitate debugging and comparison of hardware.
 - Display a "NOT RECORDING" warning message on the plots to avoid forgetting to record data when running experiments.

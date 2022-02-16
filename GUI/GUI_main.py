@@ -34,8 +34,9 @@ class Photometry_GUI(QtGui.QWidget):
         # Variables
 
         self.board = None
-        self.data_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+        #self.data_dir = os.path.join(
+        #    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+        self.data_dir = 'D:\pupil'
         self.subject_ID = ''
         self.running = False
         self.connected = False
@@ -81,7 +82,7 @@ class Photometry_GUI(QtGui.QWidget):
 
         self.mode_label = QtGui.QLabel("Mode:")
         self.mode_select = QtGui.QComboBox()
-        self.mode_select.addItems(['2 colour continuous', '1 colour time div.', '2 colour time div.', '4 colour time div.'])
+        self.mode_select.addItems(['2 colour continuous', '1 colour time div.', '2 colour time div.', '1site-3colors', '1site-4colors', '2sites-3colors', '2sites-4colors'])
         set_cbox_item(self.mode_select, config.default_acquisition_mode)
         self.rate_label = QtGui.QLabel('Sampling rate (Hz):')
         self.rate_text = QtGui.QLineEdit()
@@ -376,9 +377,14 @@ class Photometry_GUI(QtGui.QWidget):
         # and update the plot.
         data = self.board.process_data()
         if data:
-            if self.mode == '4 colour time div.':
+            if self.mode in ('1site-4colors', '2sites-4colors'):
                 new_ADC1_green_ca, new_ADC1_green_iso, new_ADC2_red_ca, new_ADC2_red_iso, new_DI1, new_DI2 = data
                 self.analog_plot.update(new_ADC1_green_ca, new_ADC1_green_iso, new_ADC2_red_ca, new_ADC2_red_iso)
+                self.digital_plot.update(new_DI1, new_DI2)
+                self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot, self.mode)
+            elif self.mode in ('1site-3colors', '2sites-3colors'):
+                new_ADC1_green_ca, new_ADC1_green_iso, new_ADC2_red_ca, new_DI1, new_DI2 = data
+                self.analog_plot.update(new_ADC1_green_ca, new_ADC1_green_iso, new_ADC2_red_ca, None)
                 self.digital_plot.update(new_DI1, new_DI2)
                 self.event_triggered_plot.update(new_DI1, self.digital_plot, self.analog_plot, self.mode)
             else:
